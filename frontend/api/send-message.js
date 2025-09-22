@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
+import ENV from "../environmet.js"
 
 // ----- MongoDB Message Schema -----
 const messageSchema = new mongoose.Schema(
@@ -21,7 +22,7 @@ if (!cached) cached = global.mongoose = { conn: null, promise: null };
 async function connectDB() {
   if (cached.conn) return cached.conn;
   if (!cached.promise) {
-    cached.promise = mongoose.connect(process.env.MONGO_URI).then((m) => m);
+    cached.promise = mongoose.connect(ENV.MONGO_URI).then((m) => m);
   }
   cached.conn = await cached.promise;
   return cached.conn;
@@ -48,15 +49,15 @@ export default async function handler(req, res) {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER, // Your Gmail address
-        pass: process.env.EMAIL_PASS, // App password
+        user: ENV.EMAIL_USER, // Your Gmail address
+        pass: ENV.EMAIL_PASS, // App password
       },
     });
 
     // 3️⃣ Send email
     await transporter.sendMail({
       from: email,
-      to: process.env.EMAIL_USER,
+      to: ENV.EMAIL_USER,
       subject: `Portfolio Contact Form: ${name}`,
       text: message,
     });
