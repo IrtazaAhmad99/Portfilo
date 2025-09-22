@@ -15,17 +15,10 @@ const messageSchema = new mongoose.Schema(
 // Prevent model overwrite in serverless environment
 const Message = mongoose.models.Message || mongoose.model("Message", messageSchema);
 
-// ----- MongoDB Connection Caching -----
-let cached = global.mongoose;
-if (!cached) cached = global.mongoose = { conn: null, promise: null };
+
 
 async function connectDB() {
-  if (cached.conn) return cached.conn;
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(ENV.MONGO_URI).then((m) => m);
-  }
-  cached.conn = await cached.promise;
-  return cached.conn;
+    await mongoose.connect(ENV.MONGO_URI).then(console.log("DB CONNECTED"));
 }
 
 // ----- Serverless Function -----
