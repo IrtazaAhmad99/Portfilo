@@ -1,44 +1,59 @@
-import mongoose from "mongoose"
-import nodemailer from "nodemailer"
-import ENV from "../environmet.js";
+import mongoose from "mongoose";
+import nodemailer from "nodemailer";
 
+// ----- MongoDB Message Schema -----
 const messageSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true },
     message: { type: String, required: true },
   },
-  { timestamps: true } 
+  { timestamps: true }
 );
 
-const Message= mongoose.model("Message", messageSchema);
+// Prevent model overwrite in serverless environment
+const Message = mongoose.models.Message || mongoose.model("Message", messageSchema);
+
+// ----- MongoDB Connection Caching -----
+let cached = global.mongoose;
+if (!cached) cached = global.mongoose = { conn: null, promise: null };
 
 async function connectDB() {
-    await mongoose.connect(ENV.MONGO_URI)
+  if (cached.conn) return cached.conn;
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(process.env.MONGO_URI).then((m) => m);
+  }
+  cached.conn = await cached.promise;
+  return cached.conn;
 }
 
+// ----- Serverless Function -----
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
+    return res.status(405).json({ success: false, message: "Method not allowed" });
   }
 
   const { name, email, message } = req.body;
 
+  if (!name || !email || !message) {
+    return res.status(400).json({ success: false, message: "All fields are required" });
+  }
+
   try {
-    // 1) Connect to MongoDB + save message
+    // 1️⃣ Connect to MongoDB & save message
     await connectDB();
     await Message.create({ name, email, message });
 
-    // 2) Setup mail transport
+    // 2️⃣ Setup Nodemailer transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.EMAIL_USER, // Your Gmail address
+        pass: process.env.EMAIL_PASS, // App password
       },
     });
 
-    // 3) Send email
+    // 3️⃣ Send email
     await transporter.sendMail({
       from: email,
       to: process.env.EMAIL_USER,
@@ -46,12 +61,11 @@ export default async function handler(req, res) {
       text: message,
     });
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Message saved & email sent!" });
+    // ✅ Success
+    return res.status(200).json({ success: true, message: "Message saved & email sent!" });
+
   } catch (error) {
-    return res
-      .status(500)
-      .json({ success: false, message: error.message });
+    console.error("Serverless function error:", error); // Log the error
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
