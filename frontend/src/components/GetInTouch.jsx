@@ -22,15 +22,15 @@ const ContactSection = () => {
     setStatus("Sending...");
 
     try {
-      const response = await fetch("/send-message", {
+      const response = await fetch("http://localhost:5000/send-message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      // const data = await response
 
-      if (response.ok && data.success) {
+      if (response.status === 200) {
         setStatus("✅ Message sent successfully!");
         setFormData({ name: "", email: "", message: "" }); // clear form
       } else {

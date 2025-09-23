@@ -9,36 +9,35 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ connect to MongoDB
 mongoose.connect(ENV.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
+  .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// ✅ route for contact form
+
 app.post("/send-message", async (req, res) => {
   const { name, email, message } = req.body;
 
   try {
-    // 1️⃣ Save to MongoDB
+   
     const newMessage = new Message({ name, email, message });
     await newMessage.save();
 
-    // 2️⃣ Send Email to YOUR Gmail
+    
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: ENV.EMAIL_USER, // your Gmail address
-        pass: ENV.EMAIL_PASS, // your App Password (not normal Gmail pass!)
+        user: ENV.EMAIL_USER, 
+        pass: ENV.EMAIL_PASS, 
       },
     });
 
     await transporter.sendMail({
-      from: ENV.EMAIL_USER,     // email will be sent from YOUR Gmail
-      to: ENV.EMAIL_USER,       // you receive it in your Gmail inbox
+      from: ENV.EMAIL_USER,   
+      to: ENV.EMAIL_USER,       
       subject: `📩 New Message from ${name}`,
       text: `You have a new message from your portfolio website:Name: ${name} Email: ${email} Message: ${message} You can reply directly to this email: ${email}
       `,
-      replyTo: email, // 🔑 Important: lets you reply directly to client
+      replyTo: email, 
     });
 
     res.json({ success: true, message: "Message stored & email sent!" });
@@ -49,8 +48,3 @@ app.post("/send-message", async (req, res) => {
 });
 
 app.listen(5000, () => console.log("🚀 Server running on http://localhost:5000"));
-
-
-
-
-
