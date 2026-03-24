@@ -20,7 +20,7 @@ mongoose.connect(ENV.MONGO_URI)
 
 app.post("/send-message", async (req, res) => {
   const { name, email, message } = req.body;
-
+  
   try {
    
     const newMessage = new Message({ name, email, message });
