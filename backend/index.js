@@ -6,7 +6,11 @@ import ENV from "./environment.js";
 import Message from "./schema.js";
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "https://portfilo-i5ck.vercel.app",
+  methods: ["POST"],
+  credentials: true
+}));
 app.use(express.json());
 
 mongoose.connect(ENV.MONGO_URI)
@@ -46,5 +50,6 @@ app.post("/send-message", async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to process message" });
   }
 });
+const PORT = process.env.PORT || 5000
 
-app.listen(5000, () => console.log("🚀 Server running on http://localhost:5000"));
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
